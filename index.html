@@ -1,0 +1,788 @@
+<!doctype html>
+<html lang="id" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>spacekafe Brewing Assistant</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <script src="/_sdk/data_sdk.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&amp;family=Playfair+Display:wght@600;700&amp;display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            coffee: {
+              50: '#faf6f3',
+              100: '#f3ebe4',
+              200: '#e6d5c7',
+              300: '#d4b89e',
+              400: '#c19a77',
+              500: '#a67c52',
+              600: '#8b6544',
+              700: '#6f503a',
+              800: '#5a4132',
+              900: '#4a362b',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    * { font-family: 'DM Sans', sans-serif; }
+    .font-display { font-family: 'Playfair Display', serif; }
+    
+    .input-field {
+      transition: all 0.2s ease;
+    }
+    
+    .input-field:focus {
+      transform: translateY(-1px);
+    }
+    
+    .card-hover {
+      transition: all 0.3s ease;
+    }
+    
+    .card-hover:hover {
+      transform: translateY(-2px);
+    }
+    
+    .fade-in {
+      animation: fadeIn 0.5s ease forwards;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .stagger-1 { animation-delay: 0.1s; }
+    .stagger-2 { animation-delay: 0.2s; }
+    .stagger-3 { animation-delay: 0.3s; }
+    .stagger-4 { animation-delay: 0.4s; }
+    
+    .pour-step {
+      position: relative;
+      padding-left: 2rem;
+    }
+    
+    .pour-step::before {
+      content: '';
+      position: absolute;
+      left: 0.5rem;
+      top: 1.5rem;
+      bottom: -0.5rem;
+      width: 2px;
+      background: linear-gradient(to bottom, #c19a77, transparent);
+    }
+    
+    .pour-step:last-child::before {
+      display: none;
+    }
+    
+    .pour-dot {
+      position: absolute;
+      left: 0;
+      top: 0.25rem;
+      width: 1.25rem;
+      height: 1.25rem;
+      background: #a67c52;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 0.65rem;
+      font-weight: 600;
+    }
+
+    .hidden { display: none !important; }
+  </style>
+  <style>body { box-sizing: border-box; }</style>
+ </head>
+ <body class="h-full bg-coffee-50">
+  <div id="app" class="h-full overflow-auto"><!-- Header -->
+   <header class="bg-white border-b border-coffee-200 sticky top-0 z-10">
+    <div class="max-w-2xl mx-auto px-4">
+     <div class="flex items-center justify-between py-4 mb-4">
+      <div class="flex items-center gap-3">
+       <div class="w-10 h-10 bg-coffee-500 rounded-xl flex items-center justify-center">
+        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+        </svg>
+       </div>
+       <div>
+        <h1 id="app-title" class="font-display text-xl font-bold text-coffee-800">spacekafe</h1>
+        <p id="tagline" class="text-xs text-coffee-500 font-medium tracking-wide uppercase">Brewing Assistant</p>
+       </div>
+      </div>
+     </div><!-- Navigation Tabs -->
+     <div class="flex gap-1 border-t border-coffee-100"><button id="nav-brew" class="nav-tab active flex-1 py-3 px-4 text-center text-sm font-medium text-coffee-700 border-b-2 border-coffee-500 transition-colors hover:text-coffee-800">Brew Tools</button> <button id="nav-gear" class="nav-tab flex-1 py-3 px-4 text-center text-sm font-medium text-coffee-400 border-b-2 border-transparent hover:text-coffee-600 transition-colors">Coffee Gear</button>
+     </div>
+    </div>
+   </header>
+   <main class="max-w-2xl mx-auto px-4 py-6 pb-24"><!-- Brew Tools Page -->
+    <div id="page-brew" class="page-content"><!-- Intro Section -->
+     <section class="bg-gradient-to-r from-coffee-100 to-coffee-50 rounded-2xl border border-coffee-200 p-5 mb-6 fade-in">
+      <h2 class="text-lg font-semibold text-coffee-800 mb-2">Selamat datang di Brew Tools 👋</h2>
+      <p class="text-sm text-coffee-700 leading-relaxed">Tools sederhana untuk pemula yang ingin belajar menyeduh kopi dengan sempurna. Pilih metode dan parameter favorit Anda, kami akan memberikan panduan brew step-by-step yang mudah diikuti!</p>
+     </section><!-- Input Section -->
+     <section class="bg-white rounded-2xl shadow-sm border border-coffee-100 p-5 mb-6 fade-in">
+      <div class="flex items-center gap-2 mb-5">
+       <div class="w-8 h-8 bg-coffee-100 rounded-lg flex items-center justify-center">
+        <svg class="w-4 h-4 text-coffee-600" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+        </svg>
+       </div>
+       <h2 class="font-semibold text-coffee-800">Parameter Seduh</h2>
+      </div>
+      <div class="space-y-4"><!-- Brew Method -->
+       <div><label class="block text-sm font-medium text-coffee-700 mb-2">Metode Seduh</label>
+        <div class="grid grid-cols-5 gap-2"><button data-method="V60" class="method-btn active flex flex-col items-center p-3 rounded-xl border-2 border-coffee-200 bg-coffee-50 transition-all hover:border-coffee-400"> <span class="text-xs font-medium text-coffee-700">V60</span> </button> <button data-method="Kalita" class="method-btn flex flex-col items-center p-3 rounded-xl border-2 border-coffee-200 bg-white transition-all hover:border-coffee-400"> <span class="text-xs font-medium text-coffee-700">Kalita</span> </button> <button data-method="Tubruk" class="method-btn flex flex-col items-center p-3 rounded-xl border-2 border-coffee-200 bg-white transition-all hover:border-coffee-400"> <span class="text-xs font-medium text-coffee-700">Tubruk</span> </button> <button data-method="French Press" class="method-btn flex flex-col items-center p-3 rounded-xl border-2 border-coffee-200 bg-white transition-all hover:border-coffee-400"> <span class="text-xs font-medium text-coffee-700">French</span> </button> <button data-method="Aeropress" class="method-btn flex flex-col items-center p-3 rounded-xl border-2 border-coffee-200 bg-white transition-all hover:border-coffee-400"> <span class="text-xs font-medium text-coffee-700">Aero</span> </button>
+        </div>
+       </div><!-- Dose -->
+       <div><label class="block text-sm font-medium text-coffee-700 mb-2">Dose Kopi (gram)</label>
+        <div class="relative"><input type="number" id="dose" value="15" min="5" max="50" class="input-field w-full px-4 py-3 rounded-xl border-2 border-coffee-200 focus:border-coffee-500 focus:ring-0 outline-none text-coffee-800 font-medium"> <span class="absolute right-4 top-1/2 -translate-y-1/2 text-coffee-400 text-sm">g</span>
+        </div>
+       </div><!-- Ratio -->
+       <div><label class="block text-sm font-medium text-coffee-700 mb-2">Brew Ratio</label>
+        <div class="flex items-center gap-2"><span class="text-sm font-medium text-coffee-600">1 :</span> <input type="number" id="ratio-input" value="16" min="10" max="30" step="1" class="input-field flex-1 px-4 py-3 rounded-xl border-2 border-coffee-200 focus:border-coffee-500 focus:ring-0 outline-none text-coffee-800 font-medium">
+        </div>
+       </div><!-- Roast Level -->
+       <div><label class="block text-sm font-medium text-coffee-700 mb-2">Level Roast</label>
+        <div class="grid grid-cols-3 gap-2"><button data-roast="light" class="roast-btn flex flex-col items-center py-3 px-4 rounded-xl border-2 border-coffee-200 bg-white transition-all hover:border-coffee-400">
+          <div class="w-6 h-6 rounded-full bg-amber-300 mb-1"></div><span class="text-xs font-medium text-coffee-700">Light</span> </button> <button data-roast="medium" class="roast-btn active flex flex-col items-center py-3 px-4 rounded-xl border-2 border-coffee-200 bg-coffee-50 transition-all hover:border-coffee-400">
+          <div class="w-6 h-6 rounded-full bg-amber-600 mb-1"></div><span class="text-xs font-medium text-coffee-700">Medium</span> </button> <button data-roast="dark" class="roast-btn flex flex-col items-center py-3 px-4 rounded-xl border-2 border-coffee-200 bg-white transition-all hover:border-coffee-400">
+          <div class="w-6 h-6 rounded-full bg-amber-900 mb-1"></div><span class="text-xs font-medium text-coffee-700">Dark</span> </button>
+        </div>
+       </div>
+      </div>
+     </section><!-- Calculated Results -->
+     <section class="bg-white rounded-2xl shadow-sm border border-coffee-100 p-5 mb-6 fade-in stagger-1">
+      <div class="flex items-center gap-2 mb-5">
+       <div class="w-8 h-8 bg-coffee-100 rounded-lg flex items-center justify-center">
+        <svg class="w-4 h-4 text-coffee-600" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+        </svg>
+       </div>
+       <h2 class="font-semibold text-coffee-800">Parameter Hasil Kalkulasi</h2>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+       <div class="bg-gradient-to-br from-coffee-50 to-coffee-100 rounded-xl p-4 card-hover">
+        <div class="flex items-center gap-2 mb-2">
+         <svg class="w-4 h-4 text-coffee-500" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+         </svg><span class="text-xs font-medium text-coffee-600">Total Air</span>
+        </div>
+        <p id="total-water" class="text-2xl font-bold text-coffee-800">240 ml</p>
+       </div>
+       <div class="bg-gradient-to-br from-coffee-50 to-coffee-100 rounded-xl p-4 card-hover">
+        <div class="flex items-center gap-2 mb-2">
+         <svg class="w-4 h-4 text-coffee-500" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" />
+         </svg><span class="text-xs font-medium text-coffee-600">Bloom Water</span>
+        </div>
+        <p id="bloom-water" class="text-2xl font-bold text-coffee-800">30 ml</p>
+       </div>
+       <div class="bg-gradient-to-br from-coffee-50 to-coffee-100 rounded-xl p-4 card-hover">
+        <div class="flex items-center gap-2 mb-2">
+         <svg class="w-4 h-4 text-coffee-500" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+         </svg><span class="text-xs font-medium text-coffee-600">Suhu Air</span>
+        </div>
+        <p id="water-temp" class="text-2xl font-bold text-coffee-800">93°C</p>
+       </div>
+       <div class="bg-gradient-to-br from-coffee-50 to-coffee-100 rounded-xl p-4 card-hover">
+        <div class="flex items-center gap-2 mb-2">
+         <svg class="w-4 h-4 text-coffee-500" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+         </svg><span class="text-xs font-medium text-coffee-600">Grind Size</span>
+        </div>
+        <p id="grind-size" class="text-2xl font-bold text-coffee-800">Medium</p>
+       </div>
+       <div class="col-span-2 bg-gradient-to-br from-coffee-50 to-coffee-100 rounded-xl p-4 card-hover">
+        <div class="flex items-center gap-2 mb-2">
+         <svg class="w-4 h-4 text-coffee-500" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+         </svg><span class="text-xs font-medium text-coffee-600">Estimasi Brew Time</span>
+        </div>
+        <p id="brew-time" class="text-2xl font-bold text-coffee-800">2:30 - 3:00</p>
+       </div>
+      </div>
+     </section><!-- Pouring Schedule -->
+     <section class="bg-white rounded-2xl shadow-sm border border-coffee-100 p-5 mb-6 fade-in stagger-2">
+      <div class="flex items-center gap-2 mb-5">
+       <div class="w-8 h-8 bg-coffee-100 rounded-lg flex items-center justify-center">
+        <svg class="w-4 h-4 text-coffee-600" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+        </svg>
+       </div>
+       <h2 class="font-semibold text-coffee-800">Pouring Schedule</h2>
+      </div>
+      <div id="pouring-schedule" class="space-y-4"><!-- Will be populated by JS -->
+      </div>
+     </section><!-- Recipe Card -->
+     <section class="bg-gradient-to-br from-coffee-600 to-coffee-800 rounded-2xl shadow-lg p-6 text-white fade-in stagger-3">
+      <div class="flex items-center justify-between mb-5">
+       <div class="flex items-center gap-2">
+        <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur">
+         <svg class="w-5 h-5" fill="currentColor" viewbox="0 0 24 24"><path d="M2 21h18v-2H2M20 8h-2V5h2M20 3H4v10a4 4 0 004 4h6a4 4 0 004-4v-3h2a2 2 0 002-2V5a2 2 0 00-2-2M4 13V5h12v8a2 2 0 01-2 2H6a2 2 0 01-2-2z" />
+         </svg>
+        </div>
+        <div>
+         <h2 id="recipe-title" class="font-display text-lg font-bold">Rekomendasi Brew dari spacekafe</h2>
+         <p class="text-coffee-200 text-xs">Resep yang disesuaikan untuk Anda</p>
+        </div>
+       </div>
+      </div>
+      <div class="bg-white/10 backdrop-blur rounded-xl p-4 mb-4">
+       <div class="grid grid-cols-2 gap-y-3 gap-x-4 text-sm">
+        <div class="flex justify-between"><span class="text-coffee-200">Metode</span> <span id="recipe-method" class="font-semibold">V60</span>
+        </div>
+        <div class="flex justify-between"><span class="text-coffee-200">Dose</span> <span id="recipe-dose" class="font-semibold">15g</span>
+        </div>
+        <div class="flex justify-between"><span class="text-coffee-200">Rasio</span> <span id="recipe-ratio" class="font-semibold">1:16</span>
+        </div>
+        <div class="flex justify-between"><span class="text-coffee-200">Total Air</span> <span id="recipe-water" class="font-semibold">240ml</span>
+        </div>
+        <div class="flex justify-between"><span class="text-coffee-200">Grind Size</span> <span id="recipe-grind" class="font-semibold">Medium</span>
+        </div>
+        <div class="flex justify-between"><span class="text-coffee-200">Suhu Air</span> <span id="recipe-temp" class="font-semibold">93°C</span>
+        </div>
+        <div class="flex justify-between"><span class="text-coffee-200">Bloom</span> <span id="recipe-bloom" class="font-semibold">30ml / 30s</span>
+        </div>
+        <div class="flex justify-between"><span class="text-coffee-200">Waktu</span> <span id="recipe-time" class="font-semibold">2:30-3:00</span>
+        </div>
+       </div>
+      </div>
+      <div class="flex items-center justify-center gap-2 text-coffee-200 text-xs">
+       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+       </svg><span>Sesuaikan parameter di atas untuk mendapatkan resep terbaik</span>
+      </div>
+     </section>
+    </div><!-- Coffee Gear Page -->
+    <div id="page-gear" class="page-content hidden">
+     <!-- Add Product Form -->
+     <section class="bg-white rounded-2xl shadow-sm border border-coffee-100 p-5 mb-6 fade-in">
+      <div class="flex items-center gap-2 mb-5">
+       <div class="w-8 h-8 bg-coffee-100 rounded-lg flex items-center justify-center">
+        <svg class="w-4 h-4 text-coffee-600" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+        </svg>
+       </div>
+       <h2 class="font-semibold text-coffee-800">Tambah Produk Baru</h2>
+      </div>
+      <div class="space-y-4">
+       <div>
+        <label class="block text-sm font-medium text-coffee-700 mb-2">Link Shopee</label> <input type="text" id="shopee-link-input" placeholder="https://shopee.co.id/..." class="input-field w-full px-4 py-3 rounded-xl border-2 border-coffee-200 focus:border-coffee-500 focus:ring-0 outline-none text-coffee-800">
+       </div>
+       <div>
+        <label class="block text-sm font-medium text-coffee-700 mb-2">Nama Produk</label> <input type="text" id="product-name-input" placeholder="Contoh: V60 Dripper Ceramic" class="input-field w-full px-4 py-3 rounded-xl border-2 border-coffee-200 focus:border-coffee-500 focus:ring-0 outline-none text-coffee-800">
+       </div>
+       <div>
+        <label class="block text-sm font-medium text-coffee-700 mb-2">Link Gambar Produk</label> <input type="text" id="product-image-input" placeholder="https://example.com/image.jpg" class="input-field w-full px-4 py-3 rounded-xl border-2 border-coffee-200 focus:border-coffee-500 focus:ring-0 outline-none text-coffee-800">
+       </div><button id="add-product-btn" class="w-full bg-coffee-500 hover:bg-coffee-600 text-white font-semibold py-3 px-4 rounded-xl transition-colors flex items-center justify-center gap-2">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+        </svg>Tambah Produk </button>
+      </div>
+     </section><!-- Products Section -->
+     <section class="bg-white rounded-2xl shadow-sm border border-coffee-100 p-5 mb-6 fade-in">
+      <div class="flex items-center gap-2 mb-5">
+       <div class="w-8 h-8 bg-coffee-100 rounded-lg flex items-center justify-center">
+        <svg class="w-4 h-4 text-coffee-600" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m0 0l8 4m0-4l8 4m-8 4l-8-4m0 0l8 4m0-4l8 4M7 15l-4 2m0 0l8 4 8-4m-8 4v4" />
+        </svg>
+       </div>
+       <h2 id="gear-title" class="font-semibold text-coffee-800">Coffee Gear - Perlengkapan Pilihan</h2>
+      </div>
+      <p class="text-sm text-coffee-600 mb-6">Alat-alat kopi berkualitas yang direkomendasikan oleh spacekafe untuk memulai perjalanan manual brew Anda.</p>
+      <div id="gear-grid" class="grid grid-cols-2 gap-4">
+       <div class="col-span-2 text-center py-8 text-coffee-500">
+        <p class="text-sm">Belum ada produk. Tambahkan produk di atas!</p>
+       </div>
+      </div>
+     </section>
+    </div><!-- Delete Confirmation Modal -->
+    <div id="delete-modal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+     <div class="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl">
+      <h3 class="text-lg font-semibold text-coffee-800 mb-2">Hapus Produk?</h3>
+      <p class="text-sm text-coffee-600 mb-6">Produk ini akan dihapus dan tidak bisa dikembalikan.</p>
+      <div class="flex gap-3">
+       <button id="cancel-delete-btn" class="flex-1 px-4 py-2 rounded-lg border-2 border-coffee-200 text-coffee-700 font-medium hover:bg-coffee-50 transition-colors">Batal</button> <button id="confirm-delete-btn" class="flex-1 px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white font-medium transition-colors">Hapus</button>
+      </div>
+     </div>
+    </div>
+   </main>
+  </div>
+  <script>
+    // Default configuration
+    const defaultConfig = {
+      app_title: 'spacekafe',
+      tagline: 'Brewing Assistant',
+      recipe_section_title: 'Rekomendasi Brew dari spacekafe',
+      gear_section_title: 'Coffee Gear - Perlengkapan Pilihan',
+      background_color: '#faf6f3',
+      surface_color: '#ffffff',
+      text_color: '#4a362b',
+      primary_color: '#a67c52',
+      secondary_color: '#c19a77'
+    };
+
+    // Initialize Data SDK
+    let allProducts = [];
+    
+    const dataHandler = {
+      onDataChanged(data) {
+        allProducts = data;
+        renderGearProducts();
+      }
+    };
+
+    async function initializeDataSDK() {
+      const result = await window.dataSdk.init(dataHandler);
+      if (!result.isOk) {
+        console.error('Failed to initialize Data SDK');
+      }
+    }
+
+    // Add product to Data SDK
+    async function addProductToData(productData) {
+      const addBtn = document.getElementById('add-product-btn');
+      addBtn.disabled = true;
+      addBtn.textContent = 'Menambahkan...';
+
+      const result = await window.dataSdk.create({
+        name: productData.name,
+        link: productData.link,
+        image: productData.image,
+        description: '',
+        createdAt: new Date().toISOString()
+      });
+
+      addBtn.disabled = false;
+      addBtn.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>Tambah Produk';
+
+      if (result.isOk) {
+        clearProductForm();
+        showNotification('Produk berhasil ditambahkan!', 'success');
+      } else {
+        showNotification('Gagal menambahkan produk. Coba lagi!', 'error');
+      }
+    }
+
+    async function deleteProduct(product) {
+      const result = await window.dataSdk.delete(product);
+      if (result.isOk) {
+        showNotification('Produk berhasil dihapus!', 'success');
+      } else {
+        showNotification('Gagal menghapus produk. Coba lagi!', 'error');
+      }
+    }
+
+    function showNotification(message, type) {
+      const notification = document.createElement('div');
+      notification.className = `fixed top-4 right-4 px-6 py-3 rounded-xl font-medium text-white ${type === 'success' ? 'bg-green-500' : 'bg-red-500'} shadow-lg z-50`;
+      notification.textContent = message;
+      document.body.appendChild(notification);
+
+      setTimeout(() => {
+        notification.remove();
+      }, 3000);
+    }
+
+    // Brewing parameters and calculations
+    let currentParams = {
+      method: 'V60',
+      dose: 15,
+      ratio: 16,
+      roast: 'medium'
+    };
+
+    // Method-specific configurations
+    const methodConfigs = {
+      'V60': {
+        grindSize: { light: 'Medium-Fine', medium: 'Medium', dark: 'Medium-Coarse' },
+        temp: { light: 96, medium: 93, dark: 90 },
+        brewTime: '2:30 - 3:00',
+        bloomMultiplier: 2,
+        pours: 4
+      },
+      'Kalita': {
+        grindSize: { light: 'Medium', medium: 'Medium', dark: 'Medium-Coarse' },
+        temp: { light: 95, medium: 92, dark: 89 },
+        brewTime: '3:00 - 3:30',
+        bloomMultiplier: 2.5,
+        pours: 3
+      },
+      'Tubruk': {
+        grindSize: { light: 'Medium-Coarse', medium: 'Coarse', dark: 'Coarse' },
+        temp: { light: 95, medium: 92, dark: 88 },
+        brewTime: '4:00 - 5:00',
+        bloomMultiplier: 0,
+        pours: 1
+      },
+      'French Press': {
+        grindSize: { light: 'Coarse', medium: 'Coarse', dark: 'Extra Coarse' },
+        temp: { light: 96, medium: 93, dark: 90 },
+        brewTime: '4:00',
+        bloomMultiplier: 0,
+        pours: 1
+      },
+      'Aeropress': {
+        grindSize: { light: 'Fine', medium: 'Fine-Medium', dark: 'Medium' },
+        temp: { light: 92, medium: 88, dark: 85 },
+        brewTime: '1:30 - 2:00',
+        bloomMultiplier: 2,
+        pours: 2
+      }
+    };
+
+    function calculateParameters() {
+      const config = methodConfigs[currentParams.method];
+      const totalWater = Math.round(currentParams.dose * currentParams.ratio);
+      const bloomWater = currentParams.method === 'Tubruk' || currentParams.method === 'French Press' 
+        ? 0 
+        : Math.round(currentParams.dose * config.bloomMultiplier);
+      const temp = config.temp[currentParams.roast];
+      const grindSize = config.grindSize[currentParams.roast];
+      const brewTime = config.brewTime;
+
+      return { totalWater, bloomWater, temp, grindSize, brewTime, pours: config.pours };
+    }
+
+    function generatePouringSchedule(totalWater, bloomWater, pours) {
+      const schedule = [];
+      const method = currentParams.method;
+
+      if (method === 'Tubruk') {
+        schedule.push({
+          step: 1,
+          time: '0:00',
+          amount: totalWater,
+          description: 'Tuang seluruh air sekaligus, aduk perlahan'
+        });
+        schedule.push({
+          step: 2,
+          time: '4:00',
+          amount: '-',
+          description: 'Tunggu ampas mengendap, siap disajikan'
+        });
+      } else if (method === 'French Press') {
+        schedule.push({
+          step: 1,
+          time: '0:00',
+          amount: totalWater,
+          description: 'Tuang seluruh air, aduk lembut'
+        });
+        schedule.push({
+          step: 2,
+          time: '4:00',
+          amount: '-',
+          description: 'Tekan plunger perlahan, sajikan'
+        });
+      } else if (method === 'Aeropress') {
+        schedule.push({
+          step: 1,
+          time: '0:00',
+          amount: bloomWater,
+          description: 'Bloom - tuang air, aduk 3x'
+        });
+        schedule.push({
+          step: 2,
+          time: '0:30',
+          amount: totalWater - bloomWater,
+          description: 'Tuang sisa air hingga penuh'
+        });
+        schedule.push({
+          step: 3,
+          time: '1:30',
+          amount: '-',
+          description: 'Press perlahan selama 30 detik'
+        });
+      } else {
+        const remainingWater = totalWater - bloomWater;
+        const pourAmount = Math.round(remainingWater / (pours - 1));
+        
+        schedule.push({
+          step: 1,
+          time: '0:00',
+          amount: bloomWater,
+          description: 'Bloom - tuang melingkar, tunggu 30 detik'
+        });
+
+        const intervals = method === 'V60' ? ['0:30', '1:00', '1:30'] : ['0:30', '1:15'];
+        let accumulated = bloomWater;
+        
+        for (let i = 0; i < pours - 1; i++) {
+          const isLast = i === pours - 2;
+          const amount = isLast ? totalWater - accumulated : pourAmount;
+          accumulated += amount;
+          
+          schedule.push({
+            step: i + 2,
+            time: intervals[i],
+            amount: amount,
+            description: isLast 
+              ? 'Pour terakhir, spiral dari tengah keluar' 
+              : 'Pour melingkar dari tengah'
+          });
+        }
+      }
+
+      return schedule;
+    }
+
+    function updateDisplay() {
+      const params = calculateParameters();
+      
+      document.getElementById('total-water').textContent = params.totalWater + ' ml';
+      document.getElementById('bloom-water').textContent = params.bloomWater > 0 ? params.bloomWater + ' ml' : '-';
+      document.getElementById('water-temp').textContent = params.temp + '°C';
+      document.getElementById('grind-size').textContent = params.grindSize;
+      document.getElementById('brew-time').textContent = params.brewTime;
+
+      document.getElementById('recipe-method').textContent = currentParams.method;
+      document.getElementById('recipe-dose').textContent = currentParams.dose + 'g';
+      document.getElementById('recipe-ratio').textContent = '1:' + currentParams.ratio;
+      document.getElementById('recipe-water').textContent = params.totalWater + 'ml';
+      document.getElementById('recipe-grind').textContent = params.grindSize;
+      document.getElementById('recipe-temp').textContent = params.temp + '°C';
+      document.getElementById('recipe-bloom').textContent = params.bloomWater > 0 ? params.bloomWater + 'ml / 30s' : '-';
+      document.getElementById('recipe-time').textContent = params.brewTime;
+
+      const schedule = generatePouringSchedule(params.totalWater, params.bloomWater, params.pours);
+      const scheduleContainer = document.getElementById('pouring-schedule');
+      scheduleContainer.innerHTML = schedule.map((step) => `
+        <div class="pour-step">
+          <div class="pour-dot">${step.step}</div>
+          <div class="bg-coffee-50 rounded-xl p-4">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-sm font-semibold text-coffee-800">${step.time}</span>
+              <span class="text-sm font-bold text-coffee-600">${typeof step.amount === 'number' ? step.amount + ' ml' : step.amount}</span>
+            </div>
+            <p class="text-sm text-coffee-600">${step.description}</p>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Event Listeners
+    document.querySelectorAll('.method-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.method-btn').forEach(b => {
+          b.classList.remove('active');
+          b.classList.remove('bg-coffee-50');
+          b.classList.add('bg-white');
+        });
+        btn.classList.add('active', 'bg-coffee-50');
+        btn.classList.remove('bg-white');
+        currentParams.method = btn.dataset.method;
+        updateDisplay();
+      });
+    });
+
+    document.getElementById('ratio-input').addEventListener('change', (e) => {
+      let value = e.target.value.trim();
+      if (value === '') {
+        currentParams.ratio = 16;
+        e.target.value = 16;
+        updateDisplay();
+        return;
+      }
+      value = parseInt(value, 10);
+      if (isNaN(value)) {
+        value = 16;
+      } else {
+        value = Math.max(10, Math.min(30, value));
+      }
+      currentParams.ratio = value;
+      e.target.value = value;
+      updateDisplay();
+    });
+
+    document.querySelectorAll('.roast-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.roast-btn').forEach(b => {
+          b.classList.remove('active');
+          b.classList.remove('bg-coffee-50');
+          b.classList.add('bg-white');
+        });
+        btn.classList.add('active', 'bg-coffee-50');
+        btn.classList.remove('bg-white');
+        currentParams.roast = btn.dataset.roast;
+        updateDisplay();
+      });
+    });
+
+    document.getElementById('dose').addEventListener('input', (e) => {
+      let value = parseInt(e.target.value);
+      if (isNaN(value)) value = 15;
+      value = Math.min(Math.max(value, 5), 50);
+      currentParams.dose = value;
+      updateDisplay();
+    });
+
+    // Navigation and Page Switching
+    const navBrew = document.getElementById('nav-brew');
+    const navGear = document.getElementById('nav-gear');
+    const pageBrew = document.getElementById('page-brew');
+    const pageGear = document.getElementById('page-gear');
+
+    function showPage(page) {
+      if (page === 'brew') {
+        pageBrew.classList.remove('hidden');
+        pageGear.classList.add('hidden');
+        navBrew.classList.add('text-coffee-700', 'border-coffee-500');
+        navBrew.classList.remove('text-coffee-400', 'border-transparent');
+        navGear.classList.remove('text-coffee-700', 'border-coffee-500');
+        navGear.classList.add('text-coffee-400', 'border-transparent');
+      } else {
+        pageBrew.classList.add('hidden');
+        pageGear.classList.remove('hidden');
+        navGear.classList.add('text-coffee-700', 'border-coffee-500');
+        navGear.classList.remove('text-coffee-400', 'border-transparent');
+        navBrew.classList.remove('text-coffee-700', 'border-coffee-500');
+        navBrew.classList.add('text-coffee-400', 'border-transparent');
+      }
+    }
+
+    navBrew.addEventListener('click', () => showPage('brew'));
+    navGear.addEventListener('click', () => showPage('gear'));
+
+    function renderGearProducts() {
+      const grid = document.getElementById('gear-grid');
+      
+      if (allProducts.length === 0) {
+        grid.innerHTML = '<div class="col-span-2 text-center py-8 text-coffee-500"><p class="text-sm">Belum ada produk. Tambahkan produk di atas!</p></div>';
+        return;
+      }
+      
+      grid.innerHTML = allProducts.map(product => `
+        <div class="bg-gradient-to-br from-coffee-50 to-coffee-100 rounded-xl overflow-hidden card-hover flex flex-col group">
+          <div class="w-full h-32 bg-coffee-200 overflow-hidden flex items-center justify-center">
+            <img src="${product.image}" alt="${product.name}" loading="lazy" class="w-full h-full object-cover" onerror="this.style.background='#d4b89e'; this.alt='Gambar tidak tersedia';">
+          </div>
+          <div class="p-4 flex flex-col flex-grow">
+            <h3 class="font-semibold text-coffee-800 text-sm mb-3">${product.name}</h3>
+            <a href="${product.link}" target="_blank" rel="noopener noreferrer" class="w-full bg-coffee-500 hover:bg-coffee-600 text-white text-xs font-medium py-2 px-3 rounded-lg text-center transition-colors mb-2">Checkout Sekarang!</a>
+            <button onclick="confirmDelete('${product.__backendId}')" class="w-full bg-red-50 hover:bg-red-100 text-red-600 text-xs font-medium py-1 px-3 rounded-lg transition-colors">Hapus</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function confirmDelete(productId) {
+      const modal = document.getElementById('delete-modal');
+      modal.dataset.productId = productId;
+      modal.classList.remove('hidden');
+    }
+
+    function clearProductForm() {
+      document.getElementById('shopee-link-input').value = '';
+      document.getElementById('product-name-input').value = '';
+      document.getElementById('product-image-input').value = '';
+    }
+
+    // Add product button
+    document.getElementById('add-product-btn').addEventListener('click', async () => {
+      const link = document.getElementById('shopee-link-input').value.trim();
+      const name = document.getElementById('product-name-input').value.trim();
+      const imageUrl = document.getElementById('product-image-input').value.trim();
+
+      if (!link || !name || !imageUrl) {
+        showNotification('Lengkapi semua field yang diperlukan!', 'error');
+        return;
+      }
+
+      if (!link.includes('shopee')) {
+        showNotification('Masukkan link Shopee yang valid!', 'error');
+        return;
+      }
+
+      if (!imageUrl.startsWith('http')) {
+        showNotification('Masukkan link gambar yang valid (mulai dengan https://)!', 'error');
+        return;
+      }
+
+      await addProductToData({ name, link, image: imageUrl });
+    });
+
+    // Delete modal
+    document.getElementById('confirm-delete-btn').addEventListener('click', async () => {
+      const modal = document.getElementById('delete-modal');
+      const productId = modal.dataset.productId;
+      const product = allProducts.find(p => p.__backendId === productId);
+      
+      if (product) {
+        await deleteProduct(product);
+      }
+      
+      modal.classList.add('hidden');
+    });
+
+    document.getElementById('cancel-delete-btn').addEventListener('click', () => {
+      document.getElementById('delete-modal').classList.add('hidden');
+    });
+
+    document.getElementById('delete-modal').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('delete-modal')) {
+        e.target.classList.add('hidden');
+      }
+    });
+
+    async function onConfigChange(config) {
+      const appTitle = config.app_title || defaultConfig.app_title;
+      const tagline = config.tagline || defaultConfig.tagline;
+      const recipeTitle = config.recipe_section_title || defaultConfig.recipe_section_title;
+      const gearTitle = config.gear_section_title || defaultConfig.gear_section_title;
+      const bgColor = config.background_color || defaultConfig.background_color;
+      const surfaceColor = config.surface_color || defaultConfig.surface_color;
+      const textColor = config.text_color || defaultConfig.text_color;
+      const primaryColor = config.primary_color || defaultConfig.primary_color;
+      const secondaryColor = config.secondary_color || defaultConfig.secondary_color;
+
+      document.getElementById('app-title').textContent = appTitle;
+      document.getElementById('tagline').textContent = tagline;
+      document.getElementById('recipe-title').textContent = recipeTitle;
+      document.getElementById('gear-title').textContent = gearTitle;
+    }
+
+    if (window.elementSdk) {
+      window.elementSdk.init({
+        defaultConfig,
+        onConfigChange,
+        mapToCapabilities: (config) => ({
+          recolorables: [
+            {
+              get: () => config.background_color || defaultConfig.background_color,
+              set: (value) => window.elementSdk.setConfig({ background_color: value })
+            },
+            {
+              get: () => config.surface_color || defaultConfig.surface_color,
+              set: (value) => window.elementSdk.setConfig({ surface_color: value })
+            },
+            {
+              get: () => config.text_color || defaultConfig.text_color,
+              set: (value) => window.elementSdk.setConfig({ text_color: value })
+            },
+            {
+              get: () => config.primary_color || defaultConfig.primary_color,
+              set: (value) => window.elementSdk.setConfig({ primary_color: value })
+            },
+            {
+              get: () => config.secondary_color || defaultConfig.secondary_color,
+              set: (value) => window.elementSdk.setConfig({ secondary_color: value })
+            }
+          ],
+          borderables: [],
+          fontEditable: undefined,
+          fontSizeable: undefined
+        }),
+        mapToEditPanelValues: (config) => new Map([
+          ['app_title', config.app_title || defaultConfig.app_title],
+          ['tagline', config.tagline || defaultConfig.tagline],
+          ['recipe_section_title', config.recipe_section_title || defaultConfig.recipe_section_title],
+          ['gear_section_title', config.gear_section_title || defaultConfig.gear_section_title]
+        ])
+      });
+    }
+
+    updateDisplay();
+    initializeDataSDK();
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9dcd0d3bf5bd4094',t:'MTc3MzU5Mzc4OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
